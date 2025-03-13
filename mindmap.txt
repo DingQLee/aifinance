@@ -1,0 +1,56 @@
+---==||+++ AI FINANCE +++||==---
+
+Assets vs Liability
+ - investment: capital gain/loss, divident
+ - debt: loan interest
+Revenue vs Expenditure
+
+AI => analytic report, compare 
+
+generate reports
+
+each payment/revenue:
+ - amount
+ - source (bank, cash, credit card)
+ - type (asset, debt, expenses, liability, )
+ - category (saving, food, gym, pet, transport)
+ - date
+ - currency
+
+convert currency
+
+animation
+
+
+Structure:
+(backend) -> cloud?
+(objectBox)
+
+- Home
+  - ADD amount
+  - Today amount
+  - Total Assets/Liability, net worth
+  - Usual Expenses
+  - Usual Items (no amount)
+  - Currency Track
+
+- Report
+  - AI Analysis report
+  - Time Frame
+    - From day 1 to day x
+    - Months
+    - Year
+    - weekdays
+  - Graphs
+    - barcharts
+    - piecharts
+  - Count
+
+- List of Items
+  - Sort
+  - Filter
+    - Date, Type, subcategory,
+  - Usual Items
+
+- Premium
+  - subscription
