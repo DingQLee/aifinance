@@ -6,8 +6,9 @@ workflows:
       xcode: latest
       cocoapods: default
     scripts:
-      - name: Get Flutter dependencies
+      - name: Clean Flutter build
         script: |
+          flutter clean
           flutter pub get
       - name: Update CocoaPods specs repository
         script: |
@@ -19,6 +20,6 @@ workflows:
           pod install
       - name: Build iOS app
         script: |
-          flutter build ios --release --no-codesign --target-platform ios-13.0
+          flutter build ios --release --no-codesign  # Removed --target-platform
     artifacts:
       - build/ios/ipa/*.ipa
