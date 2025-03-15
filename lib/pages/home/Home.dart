@@ -1,4 +1,5 @@
 import 'package:aifinance/database/models.dart';
+import 'package:aifinance/game/Game.dart';
 import 'package:aifinance/pages/AllCapitals/AllCapitals.dart';
 import 'package:aifinance/pages/allItems/AllItems.dart';
 import 'package:aifinance/pages/auth/Auth.dart';
@@ -7,6 +8,7 @@ import 'package:aifinance/pages/loadingScereen/LoadingScreen.dart';
 import 'package:aifinance/pages/report/Report.dart';
 import 'package:aifinance/pages/types/AllTypes.dart';
 import 'package:aifinance/widgets/AmountInput.dart';
+import 'package:aifinance/widgets/SquareButton.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:currency_picker/currency_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -114,7 +116,8 @@ class _HomeState extends State<Home> {
 
     if (payment.amount != null &&
         enteredAmount > payment.amount! &&
-        source == 'Expense') {
+        source == 'Expense' &&
+        payment.source == 'Asset') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -169,7 +172,8 @@ class _HomeState extends State<Home> {
           .doc(user.email)
           .collection('capitals')
           .doc(payment.id);
-      if (source == 'Expense') {
+      if (source == 'Expense' && payment.source == "Asset" ||
+          source == 'Revenue' && payment.source == "Liability") {
         await capitalRef
             .update({"amount": payment.amount! - double.parse(_amount.text)});
       } else {
@@ -181,7 +185,8 @@ class _HomeState extends State<Home> {
         payment = Capital(type: "");
         type = ItemType();
         category = ItemCategory();
-        selectedTypeIndex = -1; // Reset selection
+        selectedTypeIndex = -1;
+        _amount.text = '';
       });
       initializeData();
       const snackBar = SnackBar(
@@ -232,7 +237,7 @@ class _HomeState extends State<Home> {
             null,
           ));
         }
-        setState(() {}); // Update UI after fetching categories
+        setState(() {});
       },
       onError: (e) => print("Error completing: $e"),
     );
@@ -263,7 +268,7 @@ class _HomeState extends State<Home> {
       );
     }
     print("Favorite categories fetched: ${favCat.length}");
-    setState(() {}); // Update UI after fetching favorite categories
+    setState(() {});
   }
 
   Future<void> getCapitals() async {
@@ -296,35 +301,55 @@ class _HomeState extends State<Home> {
     final filteredTypes = types.where((t) => t.source == source).toList();
 
     return Scaffold(
+      appBar: AppBar(),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.all(20.0),
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blue),
+              child: Text('Digify'),
+            ),
+            SquareButton(
+                onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => AllTypes())),
+                child: Text('All Types')),
+            SquareButton(
+                onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => AllItems())),
+                child: Text('All Items')),
+            SquareButton(
+                onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => AllCapitals())),
+                child: Text('Assets and Liabilities')),
+            SquareButton(
+                onPressed: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (context) => Report())),
+                child: Text('Report')),
+            SquareButton(
+                onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => CurrencySetting())),
+                child: Text('Currency')),
+            SquareButton(onPressed: logout, child: Text('Logout')),
+          ],
+        ),
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              TextButton(
-                  onPressed: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => Report())),
-                  child: Text('Report')),
-              TextButton(
-                  onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => CurrencySetting())),
-                  child: Text('Currency')),
-              TextButton(
-                  onPressed: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => AllTypes())),
-                  child: Text('All Types')),
-              TextButton(
-                  onPressed: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => AllItems())),
-                  child: Text('All Items')),
-              TextButton(
-                  onPressed: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => AllCapitals())),
-                  child: Text('Assets and Liabilities')),
-              TextButton(onPressed: logout, child: Text('Logout')),
+              Row(
+                children: [
+                  SquareButton(
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => FightingGameScreen())),
+                      child: Text('Game')),
+                ],
+              ),
               Text('Quick Entry'),
               SizedBox(
                 height: 40,
@@ -381,7 +406,6 @@ class _HomeState extends State<Home> {
               ),
               Row(
                 children: [
-                  Expanded(flex: 1, child: Text('Amount')),
                   Expanded(
                     flex: 1,
                     child: TextButton(
@@ -409,28 +433,33 @@ class _HomeState extends State<Home> {
                         },
                         amount: _amount),
                   ),
+                  Expanded(
+                    flex: 1,
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: payment.type != '' &&
+                                type.type != '' &&
+                                category.category != '' &&
+                                source != '' &&
+                                _amount.text != ''
+                            ? Colors.blue // Enabled state color
+                            : Colors.grey
+                                .withOpacity(0.3), // Disabled state color
+                        foregroundColor: Colors.white, // Text/icon color
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      ),
+                      onPressed: (payment.type != '' &&
+                              type.type != '' &&
+                              category.category != '' &&
+                              source != '' &&
+                              _amount.text != '')
+                          ? addItem
+                          : null,
+                      child: const Text('ADD'),
+                    ),
+                  ),
                 ],
-              ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  backgroundColor: payment.type != '' &&
-                          type.type != '' &&
-                          category.category != '' &&
-                          source != '' &&
-                          _amount.text != ''
-                      ? Colors.blue // Enabled state color
-                      : Colors.grey.withOpacity(0.3), // Disabled state color
-                  foregroundColor: Colors.white, // Text/icon color
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-                onPressed: (payment.type != '' &&
-                        type.type != '' &&
-                        category.category != '' &&
-                        source != '' &&
-                        _amount.text != '')
-                    ? addItem
-                    : null,
-                child: const Text('ADD'),
               ),
             ],
           ),
@@ -442,8 +471,13 @@ class _HomeState extends State<Home> {
   Widget _sourceButton(String thisSource) {
     return TextButton(
         style: TextButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              side: BorderSide(width: 4, color: Colors.amber),
+              borderRadius: BorderRadius.circular(0),
+            ),
             backgroundColor:
-                source != thisSource ? Colors.transparent : Colors.green),
+                source != thisSource ? Colors.transparent : Colors.green,
+            foregroundColor: Colors.white),
         onPressed: () {
           setState(() {
             source = thisSource;
@@ -458,8 +492,12 @@ class _HomeState extends State<Home> {
   Widget _typeButton(String typeID, ItemType thisType, int index) {
     return TextButton(
         style: TextButton.styleFrom(
-            backgroundColor:
-                type != thisType ? Colors.transparent : Colors.red),
+            shape: RoundedRectangleBorder(
+              side: BorderSide(width: 4, color: Colors.amber),
+              borderRadius: BorderRadius.circular(0),
+            ),
+            backgroundColor: type != thisType ? Colors.transparent : Colors.red,
+            foregroundColor: Colors.white),
         onPressed: () async {
           await getCats(typeID);
           setState(() {
@@ -473,9 +511,14 @@ class _HomeState extends State<Home> {
   Widget _favCatButton(FavCat thisCat) {
     return TextButton(
         style: TextButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              side: BorderSide(width: 4, color: Colors.amber),
+              borderRadius: BorderRadius.circular(0),
+            ),
             backgroundColor: category.category != thisCat.category.category
                 ? Colors.transparent
-                : Colors.yellow),
+                : Colors.yellow,
+            foregroundColor: Colors.white),
         onPressed: () async {
           await getCats(thisCat.type.id!);
           setState(() {
@@ -499,9 +542,14 @@ class _HomeState extends State<Home> {
   Widget _catButtonForItemCategory(ItemCategory thisCat) {
     return TextButton(
         style: TextButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              side: BorderSide(width: 4, color: Colors.amber),
+              borderRadius: BorderRadius.circular(0),
+            ),
             backgroundColor: category.category != thisCat.category
                 ? Colors.transparent
-                : Colors.yellow),
+                : Colors.blue,
+            foregroundColor: Colors.white),
         onPressed: () {
           setState(() {
             category = thisCat;
@@ -524,9 +572,14 @@ class _HomeState extends State<Home> {
   Widget _capitalButton(Capital thisCapital) {
     return TextButton(
         style: TextButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              side: BorderSide(width: 4, color: Colors.amber),
+              borderRadius: BorderRadius.circular(0),
+            ),
             backgroundColor: payment.type != thisCapital.type
                 ? Colors.transparent
-                : Colors.pink),
+                : Colors.pink,
+            foregroundColor: Colors.white),
         onPressed: () {
           setState(() {
             payment = thisCapital;
@@ -548,7 +601,8 @@ class _HomeState extends State<Home> {
                 color: Colors.red,
               ),
             ),
-            Text("${thisCapital.type!} ${thisCapital.amount}"),
+            Text(
+                "${thisCapital.type!} \$${thisCapital.amount!.toStringAsFixed(2)}"),
           ],
         ));
   }
