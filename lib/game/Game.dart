@@ -18,7 +18,7 @@ class FightingGame extends FlameGame with TapDetector {
   @override
   Future<void> onLoad() async {
     // Load sprite sheets
-    final playerSpriteSheet = await images.load('sprites/dog.png');
+    final playerSpriteSheet = await images.load('sprites/idle.png');
     final mobSpriteSheet = await images.load('sprites/dog.png');
 
     // Player
