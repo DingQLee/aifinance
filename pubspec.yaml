@@ -39,7 +39,7 @@ dependencies:
   path_provider: ^2.1.5
   firebase_core: ^2.31.0
   cloud_firestore: ^4.17.0
-  firebase_auth: ^4.19.2
+  firebase_auth: 4.16.0
   flutter_datetime_picker_plus: ^2.2.0
   currency_picker: ^2.0.21
   forex_currency_conversion: ^0.9.1
@@ -57,7 +57,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
-  build_runner: ^2.4.15
+  build_runner: 2.4.14
   objectbox_generator: any
 
 # For information on the generic Dart part of this file, see the
