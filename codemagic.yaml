@@ -19,6 +19,6 @@ workflows:
           pod install
       - name: Build iOS app
         script: |
-          flutter build ios --release --no-codesign
+          flutter build ios --release --no-codesign --target-platform ios-13.0
     artifacts:
       - build/ios/ipa/*.ipa
