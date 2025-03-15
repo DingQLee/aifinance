@@ -4,7 +4,7 @@ platform :ios, '13.0'
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
-# Add the audioplayers source repository
+# Add the default CocoaPods source and audioplayers_darwin source
 source 'https://github.com/CocoaPods/Specs.git'
 source 'https://github.com/bluefireteam/audioplayers_darwin.git'
 
@@ -30,14 +30,11 @@ target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-  # Install all Flutter pods
+  # Install all Flutter pods (this includes audioplayers_darwin automatically)
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-
-  # Explicitly include audioplayers_darwin
-  pod 'audioplayers_darwin'
 end
 
-# Post-install hook to fix BoringSSL-GRPC issue with Xcode 16
+# Post-install hook to fix BoringSSL-GRPC issue and apply Flutter settings
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
