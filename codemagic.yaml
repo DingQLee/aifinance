@@ -13,6 +13,8 @@ workflows:
       - name: Update CocoaPods specs repository
         script: |
           cd ios
+          pod cache clean --all
+          pod deintegrate
           pod repo update
       - name: Install CocoaPods dependencies
         script: |
@@ -20,6 +22,6 @@ workflows:
           pod install
       - name: Build iOS app
         script: |
-          flutter build ios --release --no-codesign  # Removed --target-platform
+          flutter build ios --release --no-codesign --verbose
     artifacts:
       - build/ios/ipa/*.ipa
