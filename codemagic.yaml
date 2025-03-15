@@ -10,7 +10,7 @@ workflows:
         script: |
           flutter clean
           flutter pub get
-      - name: Update CocoaPods specs repository
+      - name: Clean Pods cache
         script: |
           cd ios
           pod cache clean --all
