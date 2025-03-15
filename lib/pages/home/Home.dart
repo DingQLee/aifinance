@@ -313,24 +313,86 @@ class _HomeState extends State<Home> {
             SquareButton(
                 onPressed: () => Navigator.push(context,
                     MaterialPageRoute(builder: (context) => AllTypes())),
-                child: Text('All Types')),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      "assets/images/icons/types.png",
+                      width: 26,
+                      height: 26,
+                      fit: BoxFit.cover,
+                    ),
+                    Text(' All Types'),
+                  ],
+                )),
             SquareButton(
                 onPressed: () => Navigator.push(context,
                     MaterialPageRoute(builder: (context) => AllItems())),
-                child: Text('All Items')),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      "assets/images/icons/items.png",
+                      width: 26,
+                      height: 26,
+                      fit: BoxFit.cover,
+                    ),
+                    Text(' All Items'),
+                  ],
+                )),
             SquareButton(
                 onPressed: () => Navigator.push(context,
                     MaterialPageRoute(builder: (context) => AllCapitals())),
-                child: Text('Assets and Liabilities')),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      "assets/images/icons/balance.png",
+                      width: 26,
+                      height: 26,
+                      fit: BoxFit.cover,
+                    ),
+                    Text(' Assets and Liabilities'),
+                  ],
+                )),
             SquareButton(
                 onPressed: () => Navigator.push(
                     context, MaterialPageRoute(builder: (context) => Report())),
-                child: Text('Report')),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      "assets/images/icons/doc.png",
+                      width: 26,
+                      height: 26,
+                      fit: BoxFit.cover,
+                    ),
+                    Text(' Report'),
+                  ],
+                )),
             SquareButton(
                 onPressed: () => Navigator.push(context,
                     MaterialPageRoute(builder: (context) => CurrencySetting())),
-                child: Text('Currency')),
-            SquareButton(onPressed: logout, child: Text('Logout')),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      "assets/images/icons/currency.png",
+                      width: 26,
+                      height: 26,
+                      fit: BoxFit.cover,
+                    ),
+                    Text(' Currency'),
+                  ],
+                )),
+            SquareButton(
+                onPressed: logout,
+                child: Row(
+                  children: [
+                    Image.asset(
+                      "assets/images/icons/exit.png",
+                      width: 26,
+                      height: 26,
+                      fit: BoxFit.cover,
+                    ),
+                    Text(' Logout'),
+                  ],
+                )),
           ],
         ),
       ),
