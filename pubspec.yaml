@@ -43,7 +43,7 @@ dependencies:
   forex_currency_conversion: ^0.9.1
   google_fonts: ^6.2.1
   flame: ^1.26.0
-  flame_audio: ^2.12.0
+  flame_audio: ^2.11.1
 
 dev_dependencies:
   flutter_test:
