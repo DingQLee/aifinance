@@ -4,9 +4,8 @@ platform :ios, '13.0'
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
-# Add the default CocoaPods source and audioplayers_darwin source
+# Use only the default CocoaPods source (audioplayers_darwin should be in the trunk)
 source 'https://github.com/CocoaPods/Specs.git'
-source 'https://github.com/bluefireteam/audioplayers_darwin.git'
 
 # Flutter-specific preparation
 def flutter_root
