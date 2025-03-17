@@ -251,7 +251,17 @@ class _AllCapitalsState extends State<AllCapitals> {
             onPressed: () => Navigator.push(
                 context, MaterialPageRoute(builder: (context) => Home())),
             icon: Icon(Icons.arrow_back)),
-        title: Text('Assets and Liabilities'),
+        title: Row(
+          children: [
+            Image.asset(
+              "assets/images/icons/balance.png",
+              width: 24,
+              height: 24,
+              fit: BoxFit.cover,
+            ),
+            Text(' Assets and Liabilities'),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(

@@ -178,6 +178,18 @@ class _AllItemsState extends State<AllItems> {
                     title: Column(
                       children: [
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              "assets/images/icons/items.png",
+                              width: 26,
+                              height: 26,
+                              fit: BoxFit.cover,
+                            ),
+                            Text(' All Items'),
+                          ],
+                        ),
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             _sourceButton("Expense"),
@@ -244,42 +256,7 @@ class _AllItemsState extends State<AllItems> {
                                                     ))),
                                         child: Padding(
                                           padding: const EdgeInsets.all(8.0),
-                                          child: Column(
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceEvenly,
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      Text(itemsList[index]
-                                                          .currency!),
-                                                      Text(
-                                                          '\$${itemsList[index].amount}'),
-                                                    ],
-                                                  ),
-                                                  Text(itemsList[index]
-                                                      .time
-                                                      .toString()
-                                                      .substring(0, 10)),
-                                                ],
-                                              ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceEvenly,
-                                                children: [
-                                                  Text(capitals[itemsList[index]
-                                                          .paymentID!]!
-                                                      .type!),
-                                                  Text(types[itemsList[index]
-                                                          .typeID!]!
-                                                      .type!),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
+                                          child: _item(itemsList[index]),
                                         ),
                                       ),
                                     )),
@@ -301,5 +278,35 @@ class _AllItemsState extends State<AllItems> {
           style: TextStyle(
               color: source == thisSource ? Colors.green : Colors.white),
         ));
+  }
+
+  Widget _item(Item item) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${item.currency}\$${item.amount!.toStringAsFixed(2)}',
+              style: TextStyle(fontSize: 20),
+            ),
+            Text(
+              item.time.toString().substring(0, 10),
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Paid by ${capitals[item.paymentID!]!.type!}'),
+            Text(
+              types[item.typeID!]!.type!,
+            )
+          ],
+        ),
+      ],
+    );
   }
 }

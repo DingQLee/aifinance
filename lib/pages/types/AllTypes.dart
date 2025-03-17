@@ -266,7 +266,17 @@ class _AllTypesState extends State<AllTypes> {
             onPressed: () => Navigator.push(
                 context, MaterialPageRoute(builder: (context) => Home())),
             icon: Icon(Icons.arrow_back)),
-        title: Text('All Types'),
+        title: Row(
+          children: [
+            Image.asset(
+              "assets/images/icons/types.png",
+              width: 24,
+              height: 24,
+              fit: BoxFit.cover,
+            ),
+            Text(' All Types'),
+          ],
+        ),
         actions: [
           IconButton(
               onPressed: () {
@@ -313,16 +323,25 @@ class _AllTypesState extends State<AllTypes> {
                                           ),
                                         ],
                                       ),
-                                      Text(
-                                        types[index].source!,
-                                        style: TextStyle(fontSize: 16),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            types[index].source!,
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                color: types[index].source ==
+                                                        "Expense"
+                                                    ? Colors.red
+                                                    : Colors.green),
+                                          ),
+                                          IconButton(
+                                              onPressed: () {
+                                                // add new cat
+                                                addCat(types[index]);
+                                              },
+                                              icon: Icon(Icons.add)),
+                                        ],
                                       ),
-                                      IconButton(
-                                          onPressed: () {
-                                            // add new cat
-                                            addCat(types[index]);
-                                          },
-                                          icon: Icon(Icons.add))
                                     ],
                                   ),
                                   Column(
@@ -344,11 +363,13 @@ class _AllTypesState extends State<AllTypes> {
                                                                   [catIndex]))),
                                               child: Row(
                                                 children: [
-                                                  Icon(categories[index]
-                                                              [catIndex]
-                                                          .fav
-                                                      ? Icons.star
-                                                      : null),
+                                                  Icon(
+                                                    categories[index][catIndex]
+                                                            .fav
+                                                        ? Icons.star
+                                                        : null,
+                                                    color: Colors.amber,
+                                                  ),
                                                   Text(categories[index]
                                                           [catIndex]
                                                       .category!),

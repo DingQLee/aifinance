@@ -44,6 +44,7 @@ dependencies:
   google_fonts: ^6.2.1
   flame: ^1.26.0
   flame_audio: ^2.11.1
+  collection: ^1.17.0
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +74,8 @@ flutter:
   assets:
     - assets/images/sprites/dog.png
     - assets/images/sprites/attack1.png
+    - assets/images/sprites/attack2.png
+    - assets/images/sprites/attack3.png
     - assets/images/sprites/bg.png
     - assets/images/sprites/idle.png
     - assets/images/icons/balance.png

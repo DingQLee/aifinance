@@ -14,27 +14,55 @@ class FightingGame extends FlameGame with TapDetector {
   double lastMobAttackTime = 0;
   double lastPlayerHitTime = 0;
   bool canAct = true;
+  int currentAttackIndex =
+      0; // Track which attack in the cycle (0: Attack1, 1: Attack2, 2: Attack3)
 
   @override
   Future<void> onLoad() async {
-    // Load sprite sheets
-    final playerSpriteSheet = await images.load('sprites/idle.png');
+    final playerIdleSheet = await images.load('sprites/idle.png');
+    final attack1Sheet = await images.load('sprites/attack1.png');
+    final attack2Sheet = await images.load('sprites/attack2.png');
+    final attack3Sheet = await images.load('sprites/attack3.png');
     final mobSpriteSheet = await images.load('sprites/dog.png');
 
-    // Player
-    player = PlayerComponent()
-      ..position = Vector2(50, size.y / 2 - 50)
-      ..animation = SpriteAnimation.fromFrameData(
-        playerSpriteSheet,
+    player = PlayerComponent(
+      idleAnimation: SpriteAnimation.fromFrameData(
+        playerIdleSheet,
         SpriteAnimationData.sequenced(
-          amount: 4,
+          amount: 6,
           stepTime: 0.2,
-          textureSize: Vector2(80, 80),
+          textureSize: Vector2(64, 64),
         ),
-      );
+      ),
+      attack1Animation: SpriteAnimation.fromFrameData(
+        attack1Sheet,
+        SpriteAnimationData.sequenced(
+          amount: 6,
+          stepTime: 0.1,
+          textureSize: Vector2(64, 64),
+        ),
+      ),
+      attack2Animation: SpriteAnimation.fromFrameData(
+        attack2Sheet,
+        SpriteAnimationData.sequenced(
+          amount: 6,
+          stepTime: 0.1,
+          textureSize: Vector2(64, 64),
+        ),
+      ),
+      attack3Animation: SpriteAnimation.fromFrameData(
+        attack3Sheet,
+        SpriteAnimationData.sequenced(
+          amount: 6,
+          stepTime: 0.1,
+          textureSize: Vector2(64, 64),
+        ),
+      ),
+    )
+      ..position = Vector2(50, size.y / 2 - 50)
+      ..scale = Vector2(2.0, 2.0);
     add(player);
 
-    // Mob
     mob = MobComponent()
       ..position = Vector2(size.x - 100, size.y / 2 - 50)
       ..animation = SpriteAnimation.fromFrameData(
@@ -44,10 +72,10 @@ class FightingGame extends FlameGame with TapDetector {
           stepTime: 0.2,
           textureSize: Vector2(80, 80),
         ),
-      );
+      )
+      ..scale = Vector2(2.0, 2.0);
     add(mob);
 
-    // HP Text
     playerHPText = TextComponent(
       text: 'HP: ${player.hp}',
       position: Vector2(50, size.y / 2 - 70),
@@ -65,7 +93,6 @@ class FightingGame extends FlameGame with TapDetector {
     add(mobHPText);
     add(messageText);
 
-    // Buttons (Flutter overlay)
     overlays.add('buttons');
   }
 
@@ -73,14 +100,12 @@ class FightingGame extends FlameGame with TapDetector {
   void update(double dt) {
     super.update(dt);
 
-    // Mob attacks every 1 second
     lastMobAttackTime += dt;
     if (lastMobAttackTime >= 1.0 && mob.hp > 0 && player.hp > 0) {
       _mobAttack();
       lastMobAttackTime = 0;
     }
 
-    // Re-enable player actions after 0.5 seconds
     if (!canAct) {
       lastPlayerHitTime += dt;
       if (lastPlayerHitTime >= 0.5) {
@@ -89,7 +114,6 @@ class FightingGame extends FlameGame with TapDetector {
       }
     }
 
-    // Update HP text
     playerHPText.text = 'HP: ${player.hp}';
     mobHPText.text = 'HP: ${mob.hp}';
   }
@@ -98,7 +122,6 @@ class FightingGame extends FlameGame with TapDetector {
     int damage = Random().nextInt(15) + 5;
     int effectiveDamage = (damage - player.defense).clamp(0, damage);
     player.hp -= effectiveDamage;
-    player.setAnimationState('hit');
     FlameAudio.play('hit.mp3');
     messageText.text = "Mob dealt $effectiveDamage damage!";
     canAct = false;
@@ -109,33 +132,107 @@ class FightingGame extends FlameGame with TapDetector {
     pauseEngine();
     overlays.add('gameOver');
   }
+
+  Future<void> performAttack() async {
+    if (!canAct || player.hp <= 0 || mob.hp <= 0) return;
+    canAct = false;
+
+    int damage;
+    String attackName;
+    switch (currentAttackIndex) {
+      case 0:
+        damage = Random().nextInt(20) + 10;
+        attackName = "Attack1";
+        await player.playAttack1(damage, (dmg) {
+          mob.hp -= dmg;
+          FlameAudio.play('attack.mp3');
+          messageText.text = "$attackName dealt $dmg damage!";
+          if (mob.hp <= 0) _endGame("You win!");
+        });
+        currentAttackIndex = 1;
+        break;
+      case 1:
+        damage = Random().nextInt(25) + 15;
+        attackName = "Attack2";
+        await player.playAttack2(damage, (dmg) {
+          mob.hp -= dmg;
+          FlameAudio.play('attack.mp3');
+          messageText.text = "$attackName dealt $dmg damage!";
+          if (mob.hp <= 0) _endGame("You win!");
+        });
+        currentAttackIndex = 2;
+        break;
+      case 2:
+        damage = Random().nextInt(30) + 20;
+        attackName = "Attack3";
+        await player.playAttack3(damage, (dmg) {
+          mob.hp -= dmg;
+          FlameAudio.play('attack.mp3');
+          messageText.text = "$attackName dealt $dmg damage!";
+          if (mob.hp <= 0) _endGame("You win!");
+        });
+        currentAttackIndex = 0; // Reset to Attack1 after Attack3 completes
+        break;
+    }
+  }
 }
 
 class PlayerComponent extends SpriteAnimationComponent {
   int hp = 100;
   int defense = 0;
 
-  PlayerComponent() : super(size: Vector2(50, 50));
+  final SpriteAnimation idleAnimation;
+  final SpriteAnimation attack1Animation;
+  final SpriteAnimation attack2Animation;
+  final SpriteAnimation attack3Animation;
 
-  void setAnimationState(String state) {
-    int currentIndex = 0;
-    switch (state) {
-      case 'attack':
-        animation?.frames[1];
-        Future.delayed(
-            const Duration(milliseconds: 200), () => animation?.frames[0]);
-        break;
-      case 'hit':
-        animation?.frames[2];
-        Future.delayed(
-            const Duration(milliseconds: 200), () => animation?.frames[0]);
-        break;
-      case 'defend':
-        animation?.frames[3];
-        Future.delayed(
-            const Duration(milliseconds: 200), () => animation?.frames[0]);
-        break;
-    }
+  PlayerComponent({
+    required this.idleAnimation,
+    required this.attack1Animation,
+    required this.attack2Animation,
+    required this.attack3Animation,
+  }) : super(size: Vector2(50, 50), animation: idleAnimation);
+
+  Future<void> playAttack1(int damage, Function(int) onDamage) async {
+    final ticker = attack1Animation.createTicker();
+    animation = attack1Animation;
+
+    // Attack1 lands after 0.3 seconds (300ms)
+    await Future.delayed(Duration(milliseconds: 200));
+    onDamage(damage);
+
+    // Complete the remaining animation (total 600ms - 300ms = 300ms)
+    await Future.delayed(Duration(milliseconds: 200));
+
+    animation = idleAnimation;
+  }
+
+  Future<void> playAttack2(int damage, Function(int) onDamage) async {
+    final ticker = attack2Animation.createTicker();
+    animation = attack2Animation;
+
+    // Attack2 lands after 0.3 seconds (300ms)
+    await Future.delayed(Duration(milliseconds: 200));
+    onDamage(damage);
+
+    // Complete the remaining animation
+    await Future.delayed(Duration(milliseconds: 200));
+
+    animation = idleAnimation;
+  }
+
+  Future<void> playAttack3(int damage, Function(int) onDamage) async {
+    final ticker = attack3Animation.createTicker();
+    animation = attack3Animation;
+
+    // Attack3 lands after 0.5 seconds (500ms)
+    await Future.delayed(Duration(milliseconds: 500));
+    onDamage(damage);
+
+    // Complete the remaining animation (total 600ms - 500ms = 100ms)
+    await Future.delayed(Duration(milliseconds: 300));
+
+    animation = idleAnimation;
   }
 }
 
@@ -164,36 +261,16 @@ class FightingGameScreen extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildSquareButton('Attack', () {
-                          if (!game.canAct ||
-                              game.player.hp <= 0 ||
-                              game.mob.hp <= 0) return;
-                          int damage = Random().nextInt(20) + 10;
-                          game.mob.hp -= damage;
-                          game.player.setAnimationState('attack');
-                          FlameAudio.play('attack.mp3');
-                          game.messageText.text = "You dealt $damage damage!";
-                          if (game.mob.hp <= 0) game._endGame("You win!");
+                        _buildSquareButton('Attack', () async {
+                          await game.performAttack();
                         }, !game.canAct),
                         _buildSquareButton('Defend', () {
                           if (!game.canAct ||
                               game.player.hp <= 0 ||
                               game.mob.hp <= 0) return;
+                          game.canAct = false;
                           game.player.defense = 15;
-                          game.player.setAnimationState('defend');
                           game.messageText.text = "You brace for attack!";
-                        }, !game.canAct),
-                        _buildSquareButton('Ability', () {
-                          if (!game.canAct ||
-                              game.player.hp <= 0 ||
-                              game.mob.hp <= 0) return;
-                          int damage = Random().nextInt(30) + 20;
-                          game.mob.hp -= damage;
-                          game.player.setAnimationState('attack');
-                          FlameAudio.play('attack.mp3');
-                          game.messageText.text =
-                              "Ability dealt $damage damage!";
-                          if (game.mob.hp <= 0) game._endGame("You win!");
                         }, !game.canAct),
                       ],
                     ),

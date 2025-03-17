@@ -42,53 +42,66 @@ class _BarChartState extends State<BarChart> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the screen width to constrain the bar width
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double adjustedBarWidth = widget.barWidth
+        .clamp(0, screenWidth - 100); // Leave space for padding and text
+
     return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              widget.title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      scrollDirection: Axis.horizontal, // Enable horizontal scrolling
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+            minWidth: screenWidth), // Ensure at least screen width
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                widget.title,
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
-          if (widget.data.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text('No data available'),
-            )
-          else
-            ...widget.data.entries.map((entry) {
-              String date = entry.key;
-              Map<String, double> types = entry.value;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text(
-                      'Date: ${_formatDate(date)}',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
+            if (widget.data.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text('No data available'),
+              )
+            else
+              ...widget.data.entries.map((entry) {
+                String date = entry.key;
+                Map<String, double> types = entry.value;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      child: Text(
+                        'Date: ${_formatDate(date)}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ),
-                  ...types.entries.map((typeEntry) => _bar(
-                        date,
-                        typeEntry.key,
-                        typeEntry.value,
-                      )),
-                  const SizedBox(height: 16),
-                ],
-              );
-            }).toList(),
-        ],
+                    ...types.entries.map((typeEntry) => _bar(
+                          date,
+                          typeEntry.key,
+                          typeEntry.value,
+                          adjustedBarWidth, // Pass adjusted bar width
+                        )),
+                    const SizedBox(height: 16),
+                  ],
+                );
+              }).toList(),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _bar(String date, String typeName, double amount) {
+  Widget _bar(
+      String date, String typeName, double amount, double adjustedBarWidth) {
     double percentage =
         (amount / totalSum) * 100; // Percentage based on total sum
     String barKey = '$date-$typeName';
@@ -97,6 +110,7 @@ class _BarChartState extends State<BarChart> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
+        mainAxisSize: MainAxisSize.min, // Prevent row from taking full width
         children: [
           GestureDetector(
             onTap: () {
@@ -106,8 +120,9 @@ class _BarChartState extends State<BarChart> {
             },
             child: Container(
               width: isExpanded
-                  ? widget.barWidth
-                  : widget.barWidth * (amount / maxAmount),
+                  ? adjustedBarWidth
+                  : (adjustedBarWidth * (amount / maxAmount))
+                      .clamp(0.0, adjustedBarWidth), // Clamp width
               height: 20,
               color: isExpanded
                   ? Colors.blueAccent.withOpacity(0.3)
@@ -124,10 +139,12 @@ class _BarChartState extends State<BarChart> {
             ),
           ),
           const SizedBox(width: 8),
-          Expanded(
+          Flexible(
+            // Use Flexible instead of Expanded to avoid forcing width
             child: Text(
               '${percentage.toStringAsFixed(1)}% (${amount.toStringAsFixed(2)})',
               style: const TextStyle(fontSize: 12),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

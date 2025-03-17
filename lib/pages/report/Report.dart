@@ -1,6 +1,8 @@
 import 'package:aifinance/database/models.dart';
 import 'package:aifinance/pages/home/Home.dart';
 import 'package:aifinance/pages/report/BarChart.dart';
+import 'package:aifinance/pages/report/DateChart.dart';
+import 'package:collection/collection.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -269,6 +271,7 @@ class _ReportState extends State<Report> {
     String currentMonth = "${now.year}-${now.month}";
     DateTime oneYearAgo = now.subtract(Duration(days: 365));
 
+    // Filter past year data for expenses
     Map<String, List<TotalAmount>> pastYearExpenses = Map.fromEntries(
       monthlyExpense.entries.where((entry) {
         List<String> parts = entry.key.split('-');
@@ -280,6 +283,7 @@ class _ReportState extends State<Report> {
       }),
     );
 
+    // Filter past year data for revenue
     Map<String, List<TotalAmount>> pastYearRevenue = Map.fromEntries(
       monthlyRevenue.entries.where((entry) {
         List<String> parts = entry.key.split('-');
@@ -291,6 +295,7 @@ class _ReportState extends State<Report> {
       }),
     );
 
+    // Simplify monthly expense by type
     Map<String, Map<String, List<TotalAmount>>> pastYearExpensesByType =
         Map.fromEntries(
       monthlyExpenseByType.entries.where((entry) {
@@ -303,6 +308,16 @@ class _ReportState extends State<Report> {
       }),
     );
 
+    Map<String, Map<String, double>> monthlyExpenseByTypeSimple = {};
+    pastYearExpensesByType.forEach((month, types) {
+      monthlyExpenseByTypeSimple[month] = {};
+      types.forEach((type, totals) {
+        double totalAmount = totals.fold(0, (sum, t) => sum + t.amount);
+        monthlyExpenseByTypeSimple[month]![type] = totalAmount;
+      });
+    });
+
+    // Simplify monthly revenue by type
     Map<String, Map<String, List<TotalAmount>>> pastYearRevenueByType =
         Map.fromEntries(
       monthlyRevenueByType.entries.where((entry) {
@@ -315,13 +330,12 @@ class _ReportState extends State<Report> {
       }),
     );
 
-    // Convert monthlyExpenseByType to a simpler Map<String, Map<String, double>> for BarChart
-    Map<String, Map<String, double>> monthlyExpenseByTypeSimple = {};
-    pastYearExpensesByType.forEach((month, types) {
-      monthlyExpenseByTypeSimple[month] = {};
+    Map<String, Map<String, double>> monthlyRevenueByTypeSimple = {};
+    pastYearRevenueByType.forEach((month, types) {
+      monthlyRevenueByTypeSimple[month] = {};
       types.forEach((type, totals) {
         double totalAmount = totals.fold(0, (sum, t) => sum + t.amount);
-        monthlyExpenseByTypeSimple[month]![type] = totalAmount;
+        monthlyRevenueByTypeSimple[month]![type] = totalAmount;
       });
     });
 
@@ -334,7 +348,17 @@ class _ReportState extends State<Report> {
           ),
           icon: Icon(Icons.arrow_back),
         ),
-        title: Text('Report'),
+        title: Row(
+          children: [
+            Image.asset(
+              "assets/images/icons/doc.png",
+              width: 26,
+              height: 26,
+              fit: BoxFit.cover,
+            ),
+            Text(' Report'),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: [
@@ -352,25 +376,72 @@ class _ReportState extends State<Report> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : <Widget>[
-              // Monthly Report
+              // Monthly Report (Index 0)
               SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    SizedBox(height: 16),
+                    BarChart(
+                      data: Map.fromEntries(
+                        dailyExpenseByType.entries
+                            .toList()
+                            .sorted((a, b) => a.key.compareTo(b.key)),
+                      ),
+                      title: 'Daily Expenses Bar Chart',
+                    ),
+                    SizedBox(height: 16),
+                    DateChart(
+                      data: Map.fromEntries(
+                        dailyExpense.entries
+                            .toList()
+                            .sorted((a, b) => a.key.compareTo(b.key))
+                            .map((entry) =>
+                                MapEntry(entry.key, {"Total": entry.value})),
+                      ),
+                      title: 'Daily Expenses by Day Bar Chart',
+                    ),
+                    SizedBox(height: 16),
+                    BarChart(
+                      data: Map.fromEntries(
+                        dailyRevenueByType.entries
+                            .toList()
+                            .sorted((a, b) => a.key.compareTo(b.key)),
+                      ),
+                      title: 'Daily Revenue Bar Chart',
+                    ),
+                    SizedBox(height: 16),
+                    DateChart(
+                      data: Map.fromEntries(
+                        dailyRevenue.entries
+                            .toList()
+                            .sorted((a, b) => a.key.compareTo(b.key))
+                            .map((entry) =>
+                                MapEntry(entry.key, {"Total": entry.value})),
+                      ),
+                      title: 'Daily Revenue by Day Bar Chart',
+                    ),
                     Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text('Monthly Report - $currentMonth',
-                            style: TextStyle(fontSize: 20))),
+                      padding: EdgeInsets.all(16),
+                      child: Text('Monthly Report - $currentMonth',
+                          style: TextStyle(fontSize: 20)),
+                    ),
                     Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Daily Expenses')),
+                      padding: EdgeInsets.all(16),
+                      child: Text('Daily Expenses each day',
+                          style: TextStyle(fontSize: 20)),
+                    ),
                     if (dailyExpense.isEmpty)
                       Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          child: Text('No expenses this month'))
+                        padding:
+                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        child: Text('No expenses this month'),
+                      )
                     else
-                      ...dailyExpense.entries.map((entry) {
+                      ...dailyExpense.entries
+                          .toList()
+                          .sorted((a, b) => a.key.compareTo(b.key))
+                          .map((entry) {
                         String day = entry.key;
                         return Padding(
                           padding:
@@ -387,15 +458,21 @@ class _ReportState extends State<Report> {
                       }),
                     SizedBox(height: 8),
                     Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Expenses by Type')),
+                      padding: EdgeInsets.all(16),
+                      child: Text('Expenses by Type',
+                          style: TextStyle(fontSize: 20)),
+                    ),
                     if (dailyExpenseByType.isEmpty)
                       Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          child: Text('No expenses by type this month'))
+                        padding:
+                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        child: Text('No expenses by type this month'),
+                      )
                     else
-                      ...dailyExpenseByType.entries.map((entry) {
+                      ...dailyExpenseByType.entries
+                          .toList()
+                          .sorted((a, b) => a.key.compareTo(b.key))
+                          .map((entry) {
                         String day = entry.key;
                         return Padding(
                           padding:
@@ -414,21 +491,22 @@ class _ReportState extends State<Report> {
                         );
                       }),
                     SizedBox(height: 16),
-                    BarChart(
-                      data: dailyExpenseByType,
-                      title: 'Daily Expenses Bar Chart',
-                    ),
-                    SizedBox(height: 16),
                     Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Daily Revenue')),
+                      padding: EdgeInsets.all(16),
+                      child: Text('Daily Revenue each day',
+                          style: TextStyle(fontSize: 20)),
+                    ),
                     if (dailyRevenue.isEmpty)
                       Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          child: Text('No revenue this month'))
+                        padding:
+                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        child: Text('No revenue this month'),
+                      )
                     else
-                      ...dailyRevenue.entries.map((entry) {
+                      ...dailyRevenue.entries
+                          .toList()
+                          .sorted((a, b) => a.key.compareTo(b.key))
+                          .map((entry) {
                         String day = entry.key;
                         return Padding(
                           padding:
@@ -445,15 +523,21 @@ class _ReportState extends State<Report> {
                       }),
                     SizedBox(height: 8),
                     Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Revenue by Type')),
+                      padding: EdgeInsets.all(16),
+                      child: Text('Revenue by Type',
+                          style: TextStyle(fontSize: 20)),
+                    ),
                     if (dailyRevenueByType.isEmpty)
                       Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          child: Text('No revenue by type this month'))
+                        padding:
+                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        child: Text('No revenue by type this month'),
+                      )
                     else
-                      ...dailyRevenueByType.entries.map((entry) {
+                      ...dailyRevenueByType.entries
+                          .toList()
+                          .sorted((a, b) => a.key.compareTo(b.key))
+                          .map((entry) {
                         String day = entry.key;
                         return Padding(
                           padding:
@@ -474,18 +558,65 @@ class _ReportState extends State<Report> {
                   ],
                 ),
               ),
-              // Yearly Report
+              // Yearly Report (Index 1)
               SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    SizedBox(height: 16),
+                    BarChart(
+                      data: Map.fromEntries(
+                        monthlyExpenseByTypeSimple.entries
+                            .toList()
+                            .sorted((a, b) => a.key.compareTo(b.key)),
+                      ),
+                      title: 'Monthly Expenses Bar Chart (Past 365 Days)',
+                    ),
+                    SizedBox(height: 16),
+                    DateChart(
+                      data: Map.fromEntries(
+                        pastYearExpenses.entries
+                            .toList()
+                            .sorted((a, b) => a.key.compareTo(b.key))
+                            .map((entry) => MapEntry(entry.key, {
+                                  "Total": entry.value
+                                      .fold(0.0, (sum, t) => sum + t.amount)
+                                })),
+                      ),
+                      title: 'Expenses by Month Bar Chart (Past 365 Days)',
+                    ),
+                    SizedBox(height: 16),
+                    DateChart(
+                      data: Map.fromEntries(
+                        monthlyRevenueByTypeSimple.entries
+                            .toList()
+                            .sorted((a, b) => a.key.compareTo(b.key)),
+                      ),
+                      title: 'Monthly Revenue Bar Chart (Past 365 Days)',
+                    ),
+                    SizedBox(height: 16),
+                    DateChart(
+                      data: Map.fromEntries(
+                        pastYearRevenue.entries
+                            .toList()
+                            .sorted((a, b) => a.key.compareTo(b.key))
+                            .map((entry) => MapEntry(entry.key, {
+                                  "Total": entry.value
+                                      .fold(0.0, (sum, t) => sum + t.amount)
+                                })),
+                      ),
+                      title: 'Revenue by Month Bar Chart (Past 365 Days)',
+                    ),
                     Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text('Yearly Report',
-                            style: TextStyle(fontSize: 20))),
+                      padding: EdgeInsets.all(16),
+                      child:
+                          Text('Yearly Report', style: TextStyle(fontSize: 20)),
+                    ),
                     Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Yearly Totals')),
+                      padding: EdgeInsets.all(16),
+                      child:
+                          Text('Yearly Totals', style: TextStyle(fontSize: 20)),
+                    ),
                     ...totalExpense.map((total) => Padding(
                           padding:
                               EdgeInsets.symmetric(vertical: 4, horizontal: 16),
@@ -500,13 +631,16 @@ class _ReportState extends State<Report> {
                         )),
                     SizedBox(height: 8),
                     Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Totals by Type')),
+                      padding: EdgeInsets.all(16),
+                      child: Text('Totals by Type',
+                          style: TextStyle(fontSize: 20)),
+                    ),
                     if (totalExpenseByType.isEmpty)
                       Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          child: Text('No expenses by type'))
+                        padding:
+                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        child: Text('No expenses by type'),
+                      )
                     else
                       ...totalExpenseByType.entries.map((entry) => Padding(
                             padding: EdgeInsets.symmetric(
@@ -521,9 +655,10 @@ class _ReportState extends State<Report> {
                           )),
                     if (totalRevenueByType.isEmpty)
                       Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          child: Text('No revenue by type'))
+                        padding:
+                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        child: Text('No revenue by type'),
+                      )
                     else
                       ...totalRevenueByType.entries.map((entry) => Padding(
                             padding: EdgeInsets.symmetric(
@@ -538,19 +673,26 @@ class _ReportState extends State<Report> {
                           )),
                     SizedBox(height: 16),
                     Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Monthly Breakdown (Past 365 Days)')),
-                    SizedBox(height: 8),
+                      padding: EdgeInsets.all(16),
+                      child: Text('Monthly Breakdown (Past 365 Days)',
+                          style: TextStyle(fontSize: 20)),
+                    ),
                     Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Monthly Expenses')),
+                      padding: EdgeInsets.all(16),
+                      child: Text('Monthly Expenses each month',
+                          style: TextStyle(fontSize: 20)),
+                    ),
                     if (pastYearExpenses.isEmpty)
                       Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          child: Text('No expenses in the past 365 days'))
+                        padding:
+                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        child: Text('No expenses in the past 365 days'),
+                      )
                     else
-                      ...pastYearExpenses.entries.map((entry) {
+                      ...pastYearExpenses.entries
+                          .toList()
+                          .sorted((a, b) => a.key.compareTo(b.key))
+                          .map((entry) {
                         String month = entry.key;
                         return Padding(
                           padding:
@@ -566,16 +708,21 @@ class _ReportState extends State<Report> {
                       }),
                     SizedBox(height: 8),
                     Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Monthly Expenses by Type')),
+                      padding: EdgeInsets.all(16),
+                      child: Text('Monthly Expenses by Type',
+                          style: TextStyle(fontSize: 20)),
+                    ),
                     if (pastYearExpensesByType.isEmpty)
                       Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          child:
-                              Text('No expenses by type in the past 365 days'))
+                        padding:
+                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        child: Text('No expenses by type in the past 365 days'),
+                      )
                     else
-                      ...pastYearExpensesByType.entries.map((entry) {
+                      ...pastYearExpensesByType.entries
+                          .toList()
+                          .sorted((a, b) => a.key.compareTo(b.key))
+                          .map((entry) {
                         String month = entry.key;
                         return Padding(
                           padding:
@@ -601,21 +748,22 @@ class _ReportState extends State<Report> {
                         );
                       }),
                     SizedBox(height: 16),
-                    BarChart(
-                      data: monthlyExpenseByTypeSimple,
-                      title: 'Monthly Expenses Bar Chart (Past 365 Days)',
-                    ),
-                    SizedBox(height: 16),
                     Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Monthly Revenue')),
+                      padding: EdgeInsets.all(16),
+                      child: Text('Monthly Revenue each month',
+                          style: TextStyle(fontSize: 20)),
+                    ),
                     if (pastYearRevenue.isEmpty)
                       Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          child: Text('No revenue in the past 365 days'))
+                        padding:
+                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        child: Text('No revenue in the past 365 days'),
+                      )
                     else
-                      ...pastYearRevenue.entries.map((entry) {
+                      ...pastYearRevenue.entries
+                          .toList()
+                          .sorted((a, b) => a.key.compareTo(b.key))
+                          .map((entry) {
                         String month = entry.key;
                         return Padding(
                           padding:
@@ -631,16 +779,21 @@ class _ReportState extends State<Report> {
                       }),
                     SizedBox(height: 8),
                     Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Monthly Revenue by Type')),
+                      padding: EdgeInsets.all(16),
+                      child: Text('Monthly Revenue by Type',
+                          style: TextStyle(fontSize: 20)),
+                    ),
                     if (pastYearRevenueByType.isEmpty)
                       Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          child:
-                              Text('No revenue by type in the past 365 days'))
+                        padding:
+                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        child: Text('No revenue by type in the past 365 days'),
+                      )
                     else
-                      ...pastYearRevenueByType.entries.map((entry) {
+                      ...pastYearRevenueByType.entries
+                          .toList()
+                          .sorted((a, b) => a.key.compareTo(b.key))
+                          .map((entry) {
                         String month = entry.key;
                         return Padding(
                           padding:
@@ -668,83 +821,128 @@ class _ReportState extends State<Report> {
                   ],
                 ),
               ),
-              // Four-Month Report
+              // Four-Month Report (Index 2)
               SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text('Four-Month Report',
-                            style: TextStyle(fontSize: 20))),
-                    ...fourMonthExpense.entries.map((entry) => Padding(
-                        padding:
-                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                        child: Text(
-                            '4-Month Period: ${entry.key}, Expenses: ${entry.value.toStringAsFixed(2)}'))),
-                    SizedBox(height: 8),
-                    Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Expenses by Type')),
-                    if (fourMonthExpenseByType.isEmpty)
-                      Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          child: Text('No expenses by type'))
-                    else
-                      ...fourMonthExpenseByType.entries.map((entry) => Padding(
-                            padding: EdgeInsets.symmetric(
-                                vertical: 4, horizontal: 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('4-Month Period: ${entry.key}'),
-                                ...entry.value.entries
-                                    .map((typeEntry) => Padding(
-                                          padding: EdgeInsets.only(left: 16),
-                                          child: Text(
-                                              '${typeEntry.key}: ${typeEntry.value.toStringAsFixed(2)}'),
-                                        )),
-                              ],
-                            ),
-                          )),
                     SizedBox(height: 16),
                     BarChart(
-                      data: fourMonthExpenseByType,
+                      data: Map.fromEntries(
+                        fourMonthExpenseByType.entries
+                            .toList()
+                            .sorted((a, b) => a.key.compareTo(b.key)),
+                      ),
                       title: 'Four-Month Expenses Bar Chart',
                     ),
                     SizedBox(height: 16),
-                    ...fourMonthRevenue.entries.map((entry) => Padding(
-                        padding:
-                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                        child: Text(
-                            '4-Month Period: ${entry.key}, Revenue: ${entry.value.toStringAsFixed(2)}'))),
+                    BarChart(
+                      data: Map.fromEntries(
+                        fourMonthRevenueByType.entries
+                            .toList()
+                            .sorted((a, b) => a.key.compareTo(b.key)),
+                      ),
+                      title: 'Four-Month Revenue Bar Chart',
+                    ),
                     SizedBox(height: 8),
                     Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Revenue by Type')),
-                    if (fourMonthRevenueByType.isEmpty)
-                      Padding(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                          child: Text('No revenue by type'))
-                    else
-                      ...fourMonthRevenueByType.entries.map((entry) => Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Four-Month Report',
+                          style: TextStyle(fontSize: 20)),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Revenue each season',
+                          style: TextStyle(fontSize: 20)),
+                    ),
+                    ...fourMonthExpense.entries
+                        .toList()
+                        .sorted((a, b) => a.key.compareTo(b.key))
+                        .map((entry) => Padding(
                             padding: EdgeInsets.symmetric(
                                 vertical: 4, horizontal: 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('4-Month Period: ${entry.key}'),
-                                ...entry.value.entries
-                                    .map((typeEntry) => Padding(
-                                          padding: EdgeInsets.only(left: 16),
-                                          child: Text(
-                                              '${typeEntry.key}: ${typeEntry.value.toStringAsFixed(2)}'),
-                                        )),
-                              ],
-                            ),
-                          )),
+                            child: Text(
+                                '4-Month Period: ${entry.key}, Expenses: ${entry.value.toStringAsFixed(2)}'))),
+                    SizedBox(height: 8),
+                    Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Expenses by Type',
+                          style: TextStyle(fontSize: 20)),
+                    ),
+                    if (fourMonthExpenseByType.isEmpty)
+                      Padding(
+                        padding:
+                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        child: Text('No expenses by type'),
+                      )
+                    else
+                      ...fourMonthExpenseByType.entries
+                          .toList()
+                          .sorted((a, b) => a.key.compareTo(b.key))
+                          .map((entry) => Padding(
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 4, horizontal: 16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('4-Month Period: ${entry.key}'),
+                                    ...entry.value.entries
+                                        .map((typeEntry) => Padding(
+                                              padding:
+                                                  EdgeInsets.only(left: 16),
+                                              child: Text(
+                                                  '${typeEntry.key}: ${typeEntry.value.toStringAsFixed(2)}'),
+                                            )),
+                                  ],
+                                ),
+                              )),
+                    SizedBox(height: 16),
+                    Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Revenue each season',
+                          style: TextStyle(fontSize: 20)),
+                    ),
+                    ...fourMonthRevenue.entries
+                        .toList()
+                        .sorted((a, b) => a.key.compareTo(b.key))
+                        .map((entry) => Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: 4, horizontal: 16),
+                            child: Text(
+                                '4-Month Period: ${entry.key}, Revenue: ${entry.value.toStringAsFixed(2)}'))),
+                    SizedBox(height: 8),
+                    Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Revenue by type',
+                          style: TextStyle(fontSize: 20)),
+                    ),
+                    if (fourMonthRevenueByType.isEmpty)
+                      Padding(
+                        padding:
+                            EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                        child: Text('No revenue by type'),
+                      )
+                    else
+                      ...fourMonthRevenueByType.entries
+                          .toList()
+                          .sorted((a, b) => a.key.compareTo(b.key))
+                          .map((entry) => Padding(
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 4, horizontal: 16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('4-Month Period: ${entry.key}'),
+                                    ...entry.value.entries
+                                        .map((typeEntry) => Padding(
+                                              padding:
+                                                  EdgeInsets.only(left: 16),
+                                              child: Text(
+                                                  '${typeEntry.key}: ${typeEntry.value.toStringAsFixed(2)}'),
+                                            )),
+                                  ],
+                                ),
+                              )),
                   ],
                 ),
               ),

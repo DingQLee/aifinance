@@ -153,47 +153,59 @@ class _CurrencySettingState extends State<CurrencySetting> {
             onPressed: () => Navigator.push(
                 context, MaterialPageRoute(builder: (context) => Home())),
             icon: Icon(Icons.arrow_back)),
-        title: Text("Currency Settings"),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                // default currency
-                Text("Your Default Currency"),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(currency.currency),
-                    GestureDetector(
-                        onTap: () {
-                          showCurrencyPicker(
-                            context: context,
-                            showFlag: true,
-                            showCurrencyName: true,
-                            showCurrencyCode: true,
-                            onSelect: (Currency thisCurrency) {
-                              setState(() {
-                                currency.currency = thisCurrency.code;
-                                saveCurrency();
-                              });
-                            },
-                          );
-                        },
-                        child: Icon(Icons.edit)),
-                  ],
-                ),
-                // add exchange pair
-                _newPair(),
-                // all exchange pair
-                Column(
-                  children: List.generate(exchangePairs.length,
-                      (index) => _exchangePair(exchangePairs[index])),
-                ),
-              ],
+        title: Row(
+          children: [
+            Image.asset(
+              "assets/images/icons/currency.png",
+              width: 26,
+              height: 26,
+              fit: BoxFit.cover,
             ),
+            Text(" Currency Settings"),
+          ],
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // default currency
+              Text("Your Default Currency"),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(null),
+                  Text(
+                    currency.currency,
+                    style: TextStyle(fontSize: 20),
+                  ),
+                  GestureDetector(
+                      onTap: () {
+                        showCurrencyPicker(
+                          context: context,
+                          showFlag: true,
+                          showCurrencyName: true,
+                          showCurrencyCode: true,
+                          onSelect: (Currency thisCurrency) {
+                            setState(() {
+                              currency.currency = thisCurrency.code;
+                              saveCurrency();
+                            });
+                          },
+                        );
+                      },
+                      child: Icon(Icons.edit)),
+                ],
+              ),
+              // add exchange pair
+              _newPair(),
+              // all exchange pair
+              Column(
+                children: List.generate(exchangePairs.length,
+                    (index) => _exchangePair(exchangePairs[index])),
+              ),
+            ],
           ),
         ),
       ),
@@ -269,34 +281,29 @@ class _CurrencySettingState extends State<CurrencySetting> {
             return Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Icon(null),
                   Column(
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Text(pair.currency1),
-                          Text(pair.currency2),
-                        ],
-                      ),
-                      Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(pair.currency1),
+                          Text('${pair.currency1} '),
                           Text(
                             snapshot.data!.toStringAsFixed(3),
-                            style: TextStyle(fontSize: 16),
+                            style: TextStyle(fontSize: 20),
                           ),
-                          Text(pair.currency2),
+                          Text(' ${pair.currency2}'),
                         ],
                       ),
                     ],
                   ),
-                  IconButton(
-                    onPressed: () {
+                  GestureDetector(
+                    onTap: () {
                       deletePair(pair.id!);
                     },
-                    icon: Icon(Icons.delete),
+                    child: Icon(Icons.delete),
                   ),
                 ],
               ),
